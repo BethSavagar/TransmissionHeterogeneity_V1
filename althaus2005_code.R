@@ -48,7 +48,7 @@ summary(fit.serial)
 
 #random number generator
 set.seed(645)
-runs <- 100
+runs <- 4
 #number of simulations
 
 seed <- 1 #initial case
@@ -92,7 +92,7 @@ for (i in 1:runs) {
         lwd = 1)
   points(max(times), length(times), pch = 16)
   
-  outbreak_duration <- times[length(times)]
+  outbreak_duration <- max(times) #selects the final value of times (i.e. longest duration)
   outbreak_cases <- length (times)
   
   sims[i, ] <- c(i, outbreak_duration, outbreak_cases) #contains data for each simulated case import
