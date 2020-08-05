@@ -88,8 +88,8 @@ summary(fit.serial)
 
 
 - A while loop is set up which simulates the branching process from the initial index case. 
-- The number of secondary cases is stored in the vector `secondary` and generated using  `rnbinom()` with the mean R and k parameters. 
-- The serial interval to each secondary infectiongenerated using `rgamma()` with the shape and rate parameters specified.
+- The number of secondary cases is stored in the vector `secondary` and generated using  `rnbinom()` with the mean R and k parameters specified by `fit.cases`
+- The serial interval for each secondary infection is generated using `rgamma()` with the shape and rate parameters specified but `fit.serial`
 - The `t.new` vector contains the total time from the index case (t=0) to infection of each secondary case i n the current generation
 - The `cases` vector is updated to reflect the number of cases generated in a given generation i.e. the length of the t.new vector
 - The `t` vector is updated to contain the 'time-to-infection' of each case in the current generation (`t.new`)
@@ -99,7 +99,7 @@ summary(fit.serial)
 
 
 
-- Setup: Random sampling, number of simulations and initial cases
+**Setup: Random sampling, number of simulations and initial cases**
 
 ```{r eval = FALSE}
 
@@ -114,7 +114,7 @@ seed <- 1
 
 ```
 
-- Define a matrix to contain outbreak data (duration and case numbers) for each simulation
+**Define a matrix to contain outbreak data (duration and case numbers) for each simulation**
 
 ```{r eval= FALSE}
 
@@ -125,11 +125,11 @@ colnames(sims) <- c("simulation", "duration", "cases")
 
 ```
 
-- Run the model:
+**Run the model:**
 
 ```{r eval = FALSE}
 
-#A for loop is set up to run the model for the number of simulations specified (in runs)
+# A for loop is set up to run the model for the number of simulations specified (in runs)
 
 for(i in 1:runs){
   
@@ -161,18 +161,19 @@ for(i in 1:runs){
                              )
                  )
     }
+    # Update cases to contain the number of cases produced in this generation
     cases <- length(t.new)
+    
+    # Update t to contain the time-to-infection for each case in this generation
     t <- t.new
+    
+    #Update times, adding the time-to-infection for all cases in this generation
     times <- c(times, t.new)
-      
   }
   
+  sims[i, ] <- c(i, max(times), length(times))
   
-  A while loop is set up which simulates the branching process from the initial index case. 
-- The number of secondary cases is stored in the vector `secondary` and generated using  `rnbinom()` with the mean R and k parameters. 
-- The serial interval to each secondary infectiongenerated using `rgamma()` with the shape and rate parameters specified.
-- The `t.new` vector contains the total time from the index case (t=0) to infection of each secondary case i n the current generation
-  
+
 }
 
 

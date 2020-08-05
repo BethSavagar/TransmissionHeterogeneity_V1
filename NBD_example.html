@@ -390,7 +390,7 @@ library(fitdistrplus) </code></pre>
 <h3>Step 1: Defining R and k for modelling overdispersion</h3>
 <p>In Althaus (2005) empirical outbreak data from a well characterised Ebola outbreak (involving 152 individuals) is used to estimate R and k by fitting to a negative binomial distribution as follows:</p>
 <ul>
-<li>create a vector (c0) which contains the number of secondary cases produced by each of the 152 infected individuals</li>
+<li>Create a vector (c0) which contains the number of secondary cases produced by each of the 152 infected individuals</li>
 </ul>
 <pre class="r"><code># Set n to the number of cases in the outbreak, n = 152.
 n &lt;- 152 
@@ -401,7 +401,7 @@ c1 &lt;- c(1,2,2,5,14,1,4,4,1,3,3,8,2,1,1,4,9,9,1,1,17,2,1,1,1,4,3,3,4,2,5,1,2,2
 # Concatenation of vector c1 (secondary cases from 43, non-zero individuals) with the remainder of individuals (n = 152 - 43) who produced no secondary cases
 c0 &lt;- c(c1, rep(0, n-length(c1)))</code></pre>
 <ul>
-<li>use <code>fitdist()</code> from the <code>fitdistr</code> package to fit the secondary case data to a negative binomial distribution, producing an estimate for the mean R and k, the dispersion parameter.</li>
+<li>Use <code>fitdist()</code> from the <code>fitdistr</code> package to fit the secondary case data to a negative binomial distribution, producing an estimate for the mean R and k, the dispersion parameter.</li>
 </ul>
 <pre class="r"><code># fitting the secondary case data contained in c0 to the negative binomial (nbinom) distribution
 fit.cases &lt;- fitdist(c0, &quot;nbinom&quot;)
@@ -432,6 +432,82 @@ mean(d) #the mean serial interval
 # Fit serial interval data to the gamma distribution to produce estimates for the shape and rate parameters required for gamma distribution definition &amp; sampling
 fit.serial &lt;- fitdist(d, &quot;gamma&quot;)
 summary(fit.serial)</code></pre>
+</div>
+<div id="step-3-stochastic-simulations" class="section level3">
+<h3>Step 3: Stochastic simulations</h3>
+<p><em>Description</em> - A for loop is set up to run the model for the number of simulations specified - For each run, the initial case number (index case) is 1 i.e. the seed, defined outside the for loop - A vector <code>t</code> is initiated which contains the time to infection of each case in a given generation (e.g. t = 0 for index case) - A vector <code>times</code> is defined which contains the time to infection for each case in a given outbreak i.e. from the index case (t=0), to every case in each successive generation. * Note: hence the length of times gives the total number of cases in an outbreak, and the max number in times gives the longest branch of the outbreak which corresponds to outbreak duration *</p>
+<ul>
+<li>A while loop is set up which simulates the branching process from the initial index case.</li>
+<li>The number of secondary cases is stored in the vector <code>secondary</code> and generated using <code>rnbinom()</code> with the mean R and k parameters specified by <code>fit.cases</code></li>
+<li>The serial interval for each secondary infection is generated using <code>rgamma()</code> with the shape and rate parameters specified but <code>fit.serial</code></li>
+<li>The <code>t.new</code> vector contains the total time from the index case (t=0) to infection of each secondary case i n the current generation</li>
+<li>The <code>cases</code> vector is updated to reflect the number of cases generated in a given generation i.e. the length of the t.new vector</li>
+<li>The <code>t</code> vector is updated to contain the ‘time-to-infection’ of each case in the current generation (<code>t.new</code>)</li>
+<li>The <code>times</code> vector is updated, adding the duration data for each secondary case in the current generation, stored in <code>t.new</code></li>
+<li>The while loop runs on the condition that the number of cases is &gt; 0 (i.e. outbreak has not become extinct). When the number os cases = 0 the loop is broken.</li>
+<li>Outside the while loop the outbreak information is used to plot a graph of outbreak duration and cumulative number of cases, using the times vector. The <code>sims</code> matrix is also updated with the same information.</li>
+</ul>
+<p><strong>Setup: Random sampling, number of simulations and initial cases</strong></p>
+<pre class="r"><code># Set seed to ensure reproducibility of code, this will be used for random sampling from the defined negative binomial distribution to generate secondary cases.
+set.seed(645)
+
+# Set the number of simulations (i.e. 1000 simulated importations)
+runs &lt;- 10
+
+# Set the number of initial cases (i.e. a single imported case)
+seed &lt;- 1 </code></pre>
+<p><strong>Define a matrix to contain outbreak data (duration and case numbers) for each simulation</strong></p>
+<pre class="r"><code># Matrix dimensions: rows should reflect the number of simulations, 3 columns for the simulation index, outbreak duration and total case count
+
+sims &lt;- matrix(nrow = runs, ncol = 3)
+colnames(sims) &lt;- c(&quot;simulation&quot;, &quot;duration&quot;, &quot;cases&quot;)</code></pre>
+<p><strong>Run the model:</strong></p>
+<pre class="r"><code># A for loop is set up to run the model for the number of simulations specified (in runs)
+
+for(i in 1:runs){
+  
+  # for each simulation set the initial case number (cases) to the number of seed infections, stored in seed vector outside for loop
+  cases &lt;- seed
+  
+  # set t = 0 for all seed infections, i.e. the time-to-infection of the index cases is 0
+  t &lt;- rep(0, seed)
+  
+  # set the times vector equal to t, to contain the time-to-infection for every case in the outbreak
+  times &lt;- t
+  
+  # Set up a while loop to simulate the branching process from the initial seed infection/s
+  while(cases &gt;0){
+    
+    # Generate the number of secondary cases produced by each seed case using the negative binomial
+    secondary &lt;- rnbinom(cases, 
+                         size = fit.cases$estimate[1], # the dispersion parameter, k 
+                         mu = fit.cases$estimate[2]) # the mean R
+    #initiate vector to store time-to-infection for secondary cases
+    t.new &lt;- numeric()
+    
+    # Set up a for loop to calculate the time-to-infection for each secondary case using serial intervals sampled from the gamma distribution
+    for(j in 1:length(secondary)){
+      t.new &lt;- c(t.new, 
+                 t[j]+rgamma(secondary[j], 
+                             shape = fit.serial$estimate[1],
+                             rate = fit.serial$estimate[2]
+                             )
+                 )
+    }
+    # Update cases to contain the number of cases produced in this generation
+    cases &lt;- length(t.new)
+    
+    # Update t to contain the time-to-infection for each case in this generation
+    t &lt;- t.new
+    
+    #Update times, adding the time-to-infection for all cases in this generation
+    times &lt;- c(times, t.new)
+  }
+  
+  sims[i, ] &lt;- c(i, max(times), length(times))
+  
+
+}</code></pre>
 </div>
 
 
