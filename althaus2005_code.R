@@ -93,7 +93,7 @@ for (i in 1:runs) {
   points(max(times), length(times), pch = 16)
   
   outbreak_duration <- max(times) #selects the final value of times (i.e. longest duration)
-  outbreak_cases <- length (times)
+  outbreak_cases <- length(times)
   
   sims[i, ] <- c(i, outbreak_duration, outbreak_cases) #contains data for each simulated case import
 }
