@@ -1,7 +1,7 @@
 
 
 
-#Function 1: given state vector transform S --> I
+# Function 1: given state vector transform S --> I
 
 change_state <- function(state_matrix,
                          state_vector, 
